@@ -1,0 +1,28 @@
+# Secrets
+.env
+*.pem
+*.key
+!modules/pki/**/*.example.pem
+
+# Python
+__pycache__/
+*.pyc
+venv/
+.venv/
+
+# Node / React
+node_modules/
+build/
+dist/
+
+# Database
+*.db
+*.sqlite3
+
+# OS / editor
+.DS_Store
+.vscode/
+.idea/
+
+# Logs
+*.log

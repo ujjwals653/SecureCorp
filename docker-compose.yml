@@ -1,0 +1,28 @@
+version: "3.8"
+
+# Skeleton — each module fills in its own Dockerfile as it becomes ready.
+# Ports match PROJECT_CONTEXT.md §9 dev defaults.
+
+services:
+  backend:
+    build: ./modules/backend
+    ports:
+      - "5000:5000"
+    env_file:
+      - ./modules/backend/.env
+    # depends_on left out intentionally during early dev — add once
+    # real Auth/PKI modules replace mocks, per Integration Checkpoints.
+
+  frontend:
+    build: ./modules/frontend
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+
+  ids-dashboard:
+    build: ./modules/ids
+    ports:
+      - "5001:5001"
+    depends_on:
+      - backend
