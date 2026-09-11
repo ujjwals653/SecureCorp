@@ -1,0 +1,13 @@
+{
+  "_comment": "MOCK sample data — matches PROJECT_CONTEXT.md §7.1 exactly. NOT real crypto output — ciphertext/iv/wrapped_key/signature fields below are fake base64-looking placeholders, not the result of actual encryption. Use this to test Backend's storage/retrieval logic without depending on real Crypto Core output. Real envelopes come from modules/crypto-core at Integration Checkpoint 3.",
+
+  "file_id": "550e8400-e29b-41d4-a716-446655440000",
+  "sender_id": "alice",
+  "recipient_id": "bob",
+  "ciphertext": "TU9DSy1DSVBIRVJURVhULVBMQUNFSE9MREVSLURPLU5PVC1VU0UtRk9SLVJFQUwtQ1JZUFRP",
+  "iv": "TU9DSy1JVi0xMmJ5dGVz",
+  "wrapped_key": "TU9DSy1XUkFQUEVELUFFUy1LRVktUExBQ0VIT0xERVI=",
+  "signature": "TU9DSy1TSUdOQVRVUkUtUExBQ0VIT0xERVI=",
+  "filename": "quarterly_report.pdf",
+  "timestamp": "2026-09-11T09:00:00Z"
+}
