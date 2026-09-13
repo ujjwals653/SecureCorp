@@ -37,10 +37,10 @@ The system demonstrates 6 acts: Login/Identity → Key Setup → Alice shares a 
 
 | Module | Owner(s) |
 |---|---|
-| Crypto core | TBD |
-| PKI / mini-CA | TBD |
-| Authentication | TBD |
-| Backend / Portal API | TBD |
-| Frontend | TBD |
-| IDS / attack detection | TBD |
-| Testing / benchmarking / docs | TBD |
+| Crypto core | solunkepranav |
+| PKI / mini-CA | ShubhSrivastava1326 |
+| Authentication | kuldeepsonwane24 |
+| Backend / Portal API | dipesh-23 & Brishchket |
+| Frontend | Tanishka317 & eshasheth26-hash |
+| IDS / attack detection | harshshinde12 & sejal772 |
+| Testing / benchmarking / docs | ujjwals653 |
