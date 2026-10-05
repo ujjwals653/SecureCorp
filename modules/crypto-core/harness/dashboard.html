@@ -1,0 +1,269 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Engineering Hub &middot; SecureCorp</title>
+  <meta name="description" content="Modern dark-mode engineering operations hub with team status tracking, module monitoring, and Web Crypto API core integration.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap">
+  <link rel="stylesheet" href="./dashboard.css">
+  <script type="module" src="./dashboard.js"></script>
+</head>
+<body>
+  <!-- Ambient backdrop overlay -->
+  <div class="ambient-glow" aria-hidden="true"></div>
+
+  <div class="app-layout">
+    <!-- TOP NAVIGATION BAR -->
+    <header class="navbar">
+      <div class="nav-left">
+        <div class="logo-mark">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+            <path d="M2 17l10 5 10-5"/>
+            <path d="M2 12l10 5 10-5"/>
+          </svg>
+        </div>
+        <div class="brand-text">
+          <span class="brand-title">SecureCorp <span class="brand-sub">ENGINEERING HUB</span></span>
+          <span class="brand-desc">Crypto &amp; Network Security Operations</span>
+        </div>
+      </div>
+
+      <div class="nav-center">
+        <div class="search-box">
+          <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+          </svg>
+          <input type="text" id="global-search" placeholder="Search engineers, modules, or tech tags..." autocomplete="off">
+          <kbd class="search-kbd">⌘K</kbd>
+        </div>
+      </div>
+
+      <div class="nav-right">
+        <a href="./index.html" class="nav-link-btn" title="Open Web Crypto Test Lab">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>
+          </svg>
+          <span>Crypto Test Lab</span>
+        </a>
+        <div class="live-clock-pill">
+          <span class="pulse-dot"></span>
+          <span id="live-clock">12:00:00 UTC</span>
+        </div>
+      </div>
+    </header>
+
+    <main class="main-content">
+      <!-- HERO & KPI METRIC SUMMARY CARDS -->
+      <section class="metrics-grid">
+        <div class="metric-card">
+          <div class="metric-header">
+            <span class="metric-title">Active Engineers &amp; Services</span>
+            <span class="dot-pill dot-pill-active">
+              <span class="dot"></span> Active
+            </span>
+          </div>
+          <div class="metric-body">
+            <div class="metric-number" id="metric-active-count">6</div>
+            <div class="metric-sub">Across 4 core security modules</div>
+          </div>
+          <div class="metric-sparkline">
+            <div class="spark-bar" style="height: 40%"></div>
+            <div class="spark-bar" style="height: 60%"></div>
+            <div class="spark-bar" style="height: 85%"></div>
+            <div class="spark-bar" style="height: 70%"></div>
+            <div class="spark-bar" style="height: 100%"></div>
+          </div>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-header">
+            <span class="metric-title">Tasks &amp; Milestones</span>
+            <span class="dot-pill dot-pill-completed">
+              <span class="dot"></span> Completed
+            </span>
+          </div>
+          <div class="metric-body">
+            <div class="metric-number" id="metric-completed-count">14</div>
+            <div class="metric-sub">100% verified against test harness</div>
+          </div>
+          <div class="metric-sparkline">
+            <div class="spark-bar blue" style="height: 50%"></div>
+            <div class="spark-bar blue" style="height: 65%"></div>
+            <div class="spark-bar blue" style="height: 80%"></div>
+            <div class="spark-bar blue" style="height: 95%"></div>
+            <div class="spark-bar blue" style="height: 100%"></div>
+          </div>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-header">
+            <span class="metric-title">On Break / Standby</span>
+            <span class="dot-pill dot-pill-break">
+              <span class="dot"></span> On Break
+            </span>
+          </div>
+          <div class="metric-body">
+            <div class="metric-number" id="metric-break-count">2</div>
+            <div class="metric-sub">Awaiting Checkpoint 3 integration</div>
+          </div>
+          <div class="metric-sparkline">
+            <div class="spark-bar amber" style="height: 30%"></div>
+            <div class="spark-bar amber" style="height: 40%"></div>
+            <div class="spark-bar amber" style="height: 25%"></div>
+            <div class="spark-bar amber" style="height: 50%"></div>
+            <div class="spark-bar amber" style="height: 35%"></div>
+          </div>
+        </div>
+
+        <div class="metric-card highlight">
+          <div class="metric-header">
+            <span class="metric-title">Client-Side Crypto Engine</span>
+            <span class="tech-badge">Web Crypto API</span>
+          </div>
+          <div class="metric-body">
+            <div class="metric-number">30 / 30</div>
+            <div class="metric-sub">Unit test assertions passing in-browser</div>
+          </div>
+          <div class="metric-progress-wrap">
+            <div class="metric-progress-bar" style="width: 100%"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- CONTROL BAR: STATUS FILTERS & VIEW CONTROLS -->
+      <section class="controls-bar">
+        <div class="filter-group" role="tablist" aria-label="Filter by Status">
+          <button class="filter-btn active" data-filter="all">
+            All Items <span class="filter-count" id="count-all">10</span>
+          </button>
+          <button class="filter-btn" data-filter="active">
+            <span class="dot-indicator green"></span> Active <span class="filter-count" id="count-active">6</span>
+          </button>
+          <button class="filter-btn" data-filter="completed">
+            <span class="dot-indicator blue"></span> Completed <span class="filter-count" id="count-completed">2</span>
+          </button>
+          <button class="filter-btn" data-filter="break">
+            <span class="dot-indicator amber"></span> On Break <span class="filter-count" id="count-break">2</span>
+          </button>
+        </div>
+
+        <div class="actions-group">
+          <button class="action-btn" id="btn-quick-key-test">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polygon points="5 3 19 12 5 21 5 3"/>
+            </svg>
+            <span>Run Quick Crypto Benchmark</span>
+          </button>
+        </div>
+      </section>
+
+      <!-- MAIN CONTENT SPLIT: TEAM & MODULE CARDS + ACTIVITY FEED -->
+      <section class="content-split">
+        <!-- LEFT: CARDS GRID -->
+        <div class="cards-column">
+          <div class="section-title-row">
+            <h2>Team Members &amp; System Modules</h2>
+            <span class="sub-counter" id="visible-counter">Showing 10 of 10 items</span>
+          </div>
+
+          <div class="items-grid" id="items-grid">
+            <!-- Dynamic Cards will be rendered by dashboard.js -->
+          </div>
+        </div>
+
+        <!-- RIGHT: LIVE AUDIT LOG & CRYPTO DRAWER -->
+        <aside class="sidebar-column">
+          <!-- QUICK CRYPTO BENCHMARK WIDGET -->
+          <div class="side-card">
+            <div class="side-card-header">
+              <h3>Web Crypto Live Latency</h3>
+              <span class="tech-badge">Zero Server Plaintext</span>
+            </div>
+            <p class="side-card-desc">Real-time measurement on this device via <code>window.crypto.subtle</code>:</p>
+            <div class="bench-results" id="bench-results">
+              <div class="bench-row">
+                <span class="bench-label">RSA-OAEP-2048 KeyGen</span>
+                <span class="bench-val" id="bench-rsa-time">Ready</span>
+              </div>
+              <div class="bench-row">
+                <span class="bench-label">AES-256-GCM (1 MB Encrypt)</span>
+                <span class="bench-val" id="bench-aes-time">Ready</span>
+              </div>
+              <div class="bench-row">
+                <span class="bench-label">RSA-PSS-2048 Sign + Verify</span>
+                <span class="bench-val" id="bench-pss-time">Ready</span>
+              </div>
+            </div>
+            <button class="btn-side-action" id="btn-trigger-bench">
+              Measure Performance Now
+            </button>
+          </div>
+
+          <!-- SYSTEM SPECIFICATION CHEAT SHEET -->
+          <div class="side-card">
+            <div class="side-card-header">
+              <h3>Design Specifications</h3>
+              <span class="dot-pill dot-pill-completed"><span class="dot"></span> Verified</span>
+            </div>
+            <ul class="spec-list">
+              <li>
+                <span class="spec-key">Background</span>
+                <span class="spec-val"><code>#0c0e12</code> Slate/Obsidian</span>
+              </li>
+              <li>
+                <span class="spec-key">Cards &amp; Surface</span>
+                <span class="spec-val"><code>#161920</code> (1px border <code>#232834</code>)</span>
+              </li>
+              <li>
+                <span class="spec-key">Primary Text</span>
+                <span class="spec-val"><code>#FFFFFF</code></span>
+              </li>
+              <li>
+                <span class="spec-key">Muted Text</span>
+                <span class="spec-val"><code>#94A3B8</code></span>
+              </li>
+              <li>
+                <span class="spec-key">Status Badges</span>
+                <span class="spec-val">Dot pills (Active, Completed, On Break)</span>
+              </li>
+              <li>
+                <span class="spec-key">Tech Badges</span>
+                <span class="spec-val">Chips (<code>#1E232E</code> / <code>#CBD5E1</code>)</span>
+              </li>
+            </ul>
+          </div>
+
+          <!-- LIVE LOG -->
+          <div class="side-card">
+            <div class="side-card-header">
+              <h3>Operations Stream</h3>
+              <span class="badge-refresh">LIVE</span>
+            </div>
+            <div class="activity-feed" id="activity-feed">
+              <!-- Logs injected here -->
+            </div>
+          </div>
+        </aside>
+      </section>
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="app-footer">
+      <div>
+        <strong>SecureCorp CNS Challenge &middot; CE305 Applied Cryptography</strong>
+      </div>
+      <div class="footer-links">
+        <span>Theme: Obsidian Dark (<code>#0c0e12</code>)</span>
+        <span>Surface: Slate (<code>#161920</code> / <code>#232834</code>)</span>
+        <a href="./index.html">Open Crypto Core Lab &rarr;</a>
+      </div>
+    </footer>
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+</body>
+</html>

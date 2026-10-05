@@ -1,0 +1,234 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Crypto Core Test UI · SecureCorp</title>
+  <meta name="description" content="Developer test harness for SecureCorp's client-side crypto-core module: Web Crypto API testing, RSA-OAEP key wrapping, AES-256-GCM file encryption, and RSA-PSS digital signatures.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap">
+  <link rel="stylesheet" href="./styles.css">
+  <script type="module" src="./app.js"></script>
+</head>
+<body>
+  <div class="bg" aria-hidden="true">
+    <span class="orb orb-a"></span>
+    <span class="orb orb-b"></span>
+    <span class="orb orb-c"></span>
+    <span class="grid"></span>
+  </div>
+
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-mark" aria-hidden="true">
+        <svg viewBox="0 0 24 24"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/><circle cx="12" cy="16" r="1.5"/></svg>
+      </div>
+      <div>
+        <h1>Crypto Core Test Lab</h1>
+        <p class="sub">SecureCorp client-side Web Crypto API module &middot; <span class="badge-dev">Interactive Test UI</span></p>
+      </div>
+    </div>
+    <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+      <a href="./dashboard.html" class="btn btn-ghost btn-sm" style="text-decoration: none; border-color: var(--border-strong);">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 15px; height: 15px;"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+        <span>Open Operations Hub</span>
+      </a>
+      <div class="status-pills" id="status-pills" aria-live="polite"></div>
+    </div>
+  </header>
+
+  <nav class="tabs" role="tablist" aria-label="Crypto Core Test Tabs">
+    <button class="tab active" role="tab" id="tab-identities" data-tab="identities" aria-selected="true">
+      <span class="tab-num">1</span> Identities &amp; Keys
+    </button>
+    <button class="tab" role="tab" id="tab-share" data-tab="share" aria-selected="false">
+      <span class="tab-num">2</span> Encrypt &amp; Share (Alice)
+    </button>
+    <button class="tab" role="tab" id="tab-receive" data-tab="receive" aria-selected="false">
+      <span class="tab-num">3</span> Receive &amp; Decrypt (Bob / Eve)
+    </button>
+    <button class="tab" role="tab" id="tab-selftest" data-tab="selftest" aria-selected="false">
+      <span class="tab-num">4</span> Suite Self-Test
+    </button>
+    <span class="tab-indicator" id="tab-indicator" aria-hidden="true"></span>
+  </nav>
+
+  <main>
+    <!-- TAB 1: IDENTITIES -->
+    <section class="panel active" id="panel-identities" role="tabpanel" aria-labelledby="tab-identities">
+      <div class="panel-head">
+        <div>
+          <h2>Act 2: Key Setup &amp; Registration</h2>
+          <p class="muted">Each browser generates an <b>RSA-OAEP-2048</b> keypair for key wrapping and an <b>RSA-PSS-2048</b> keypair for digital signatures. Private keys are marked <b>non-extractable</b> in memory.</p>
+        </div>
+        <button class="btn btn-primary" id="btn-generate-all">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2v4M12 18v4M4.9 4.9l2.8 2.8M16.3 16.3l2.8 2.8M2 12h4M18 12h4M4.9 19.1l2.8-2.8M16.3 7.7l2.8-2.8"/></svg>
+          Generate All Personas (Alice, Bob, Eve)
+        </button>
+      </div>
+      <div class="persona-grid" id="persona-grid"></div>
+    </section>
+
+    <!-- TAB 2: ENCRYPT & SHARE -->
+    <section class="panel" id="panel-share" role="tabpanel" aria-labelledby="tab-share" hidden>
+      <div class="panel-head">
+        <div>
+          <h2>Act 3: File Encryption &amp; Envelope Assembly</h2>
+          <p class="muted">Alice generates a fresh random <b>AES-256-GCM</b> key with a 12-byte IV, wraps it with Bob's <b>RSA-OAEP</b> public key, signs <code>ciphertext &parallel; iv</code> with her <b>RSA-PSS</b> key, and creates the §7.1 envelope.</p>
+        </div>
+      </div>
+      <div class="split">
+        <div class="card">
+          <div class="row-2">
+            <div class="field">
+              <label for="share-sender">Sender (Signs payload)</label>
+              <select id="share-sender"></select>
+            </div>
+            <div class="field">
+              <label for="share-recipient">Recipient (Key wrapper)</label>
+              <select id="share-recipient"></select>
+            </div>
+          </div>
+          <div class="field">
+            <span class="label">Upload File</span>
+            <label class="dropzone" id="dropzone" for="file-input">
+              <input type="file" id="file-input" class="sr-only">
+              <svg class="dz-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V4M7 9l5-5 5 5"/><path d="M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/></svg>
+              <span class="dz-text"><b>Choose a file</b> or drag and drop here</span>
+              <span class="dz-file" id="dz-file"></span>
+            </label>
+          </div>
+          <div class="divider"><span>OR Input Quick Text Payload</span></div>
+          <div class="field">
+            <label for="share-text">File Text Content</label>
+            <textarea id="share-text" rows="4" spellcheck="false">Project Titan Financials & Architecture — Confidential
+Q3 EBITDA: $14.2M. All audit records verified.
+Server must NEVER see this plaintext.</textarea>
+          </div>
+          <div class="field">
+            <label for="share-filename">Virtual Filename</label>
+            <input id="share-filename" type="text" value="classified_report.txt" autocomplete="off">
+          </div>
+          <button class="btn btn-primary btn-block" id="btn-encrypt">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
+            Execute: Encrypt &middot; Wrap &middot; Sign
+          </button>
+        </div>
+        <div class="card">
+          <div class="card-head">
+            <h3>Crypto Pipeline Progress</h3>
+            <span class="tag" id="share-total"></span>
+          </div>
+          <ol class="pipeline" id="share-pipeline"></ol>
+        </div>
+      </div>
+
+      <div class="card envelope-card" id="envelope-card" hidden>
+        <div class="card-head">
+          <h3>Encrypted File Envelope <span class="tag tag-accent">PROJECT_CONTEXT §7.1 Contract</span></h3>
+          <div class="actions">
+            <button class="btn btn-ghost" id="btn-copy-envelope">Copy JSON</button>
+            <button class="btn btn-ghost" id="btn-download-envelope">Download .json</button>
+            <button class="btn btn-primary btn-sm" id="btn-goto-receive">Open in Decryption Panel &rarr;</button>
+          </div>
+        </div>
+        <div class="stats" id="envelope-stats"></div>
+        <pre class="code" id="envelope-json"></pre>
+      </div>
+    </section>
+
+    <!-- TAB 3: RECEIVE & DECRYPT -->
+    <section class="panel" id="panel-receive" role="tabpanel" aria-labelledby="tab-receive" hidden>
+      <div class="panel-head">
+        <div>
+          <h2>Act 3 &amp; Act 6: Verification, Key Unwrapping &amp; Decryption</h2>
+          <p class="muted">Bob (authorized) can unwrap the key and decrypt. Eve (unauthorized) fails with <code>UNWRAP_FAILED</code>. Any payload tampering immediately fails with <code>SIGNATURE_INVALID</code> before decryption is even attempted.</p>
+        </div>
+      </div>
+      <div class="split">
+        <div class="card">
+          <div class="card-head">
+            <h3>Envelope Mailbox / Storage</h3>
+            <span class="tag" id="server-count">0 envelopes</span>
+          </div>
+          <p class="muted small">Simulated server store holding only encrypted envelopes (zero plaintexts, zero unwrapped keys).</p>
+          <div class="server-list" id="server-list"></div>
+          <details class="paste">
+            <summary>Custom / Pasted Envelope JSON</summary>
+            <textarea id="paste-envelope" rows="6" spellcheck="false" placeholder='Paste a raw §7.1 JSON envelope here...'></textarea>
+            <button class="btn btn-ghost" id="btn-import-envelope">Load Envelope into Store</button>
+          </details>
+        </div>
+        <div class="card">
+          <div class="field">
+            <label for="receive-as">Attempt Decryption As User</label>
+            <select id="receive-as"></select>
+          </div>
+          <fieldset class="tamper">
+            <legend>Attack Simulation (Mallory / Eve)</legend>
+            <label class="switch">
+              <input type="checkbox" id="tamper-ciphertext">
+              <span class="track"></span>
+              <span>Flip 1 byte in ciphertext (Transit Tamper)</span>
+            </label>
+            <label class="switch">
+              <input type="checkbox" id="tamper-signature">
+              <span class="track"></span>
+              <span>Corrupt digital signature</span>
+            </label>
+            <label class="switch">
+              <input type="checkbox" id="tamper-forge">
+              <span class="track"></span>
+              <span>Mallory forged signature (Re-signed by attacker)</span>
+            </label>
+          </fieldset>
+          <button class="btn btn-primary btn-block" id="btn-decrypt">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 7.5-2"/></svg>
+            Verify Signature &amp; Decrypt
+          </button>
+          <ol class="pipeline" id="receive-pipeline"></ol>
+        </div>
+      </div>
+      <div class="card result-card" id="result-card" hidden></div>
+    </section>
+
+    <!-- TAB 4: SELF-TEST -->
+    <section class="panel" id="panel-selftest" role="tabpanel" aria-labelledby="tab-selftest" hidden>
+      <div class="panel-head">
+        <div>
+          <h2>Browser Web Crypto API Self-Test</h2>
+          <p class="muted">Executes the shared <code>test/cases.js</code> verification suite against your browser's real <code>window.crypto.subtle</code> engine.</p>
+        </div>
+        <button class="btn btn-primary" id="btn-run-tests">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+          Run Full Test Suite
+        </button>
+      </div>
+      <div class="card">
+        <div class="test-summary">
+          <div class="progress" id="test-progress-bar"><span id="test-progress"></span></div>
+          <div class="test-counts" id="test-counts">Ready to run tests</div>
+        </div>
+        <div class="dod" id="dod-list"></div>
+        <div class="test-results" id="test-results"></div>
+      </div>
+    </section>
+  </main>
+
+  <section class="card log-card" aria-label="Activity Audit Log">
+    <div class="card-head">
+      <h3>Web Crypto Operations Log</h3>
+      <button class="btn btn-ghost btn-sm" id="btn-clear-log">Clear Log</button>
+    </div>
+    <div class="log" id="log" role="log" aria-live="polite"></div>
+  </section>
+
+  <footer class="footer">
+    <span>Powered by 100% native Web Crypto API (RSA-OAEP-2048, AES-256-GCM, RSA-PSS).</span>
+    <span>SecureCorp CE305 CNS Challenge &middot; Zero server decryption &middot; Zero external crypto libraries</span>
+  </footer>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+</body>
+</html>
