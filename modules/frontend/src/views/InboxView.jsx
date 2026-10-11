@@ -11,8 +11,14 @@ import {
   Eye,
   CheckCircle2,
   Cpu,
+  Key,
+  ShieldCheck,
+  ShieldAlert,
+  FileCheck,
+  Sparkles,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
+import { useKeys } from "../context/KeyContext";
 import { portalApi } from "../services/portalApi";
 import { cryptoAdapter } from "../services/cryptoAdapter";
 import { Card } from "../components/common/Card";
@@ -22,11 +28,18 @@ import { Alert } from "../components/common/Alert";
 
 export const InboxView = () => {
   const { userId, ticket } = useAuth();
+  const { hasKeys, keyPair } = useKeys();
+
   const [inboxFiles, setInboxFiles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [selectedFileDetails, setSelectedFileDetails] = useState(null);
   const [detailsLoading, setDetailsLoading] = useState(false);
+
+  // Decryption States
+  const [decrypting, setDecrypting] = useState(false);
+  const [decryptError, setDecryptError] = useState(null);
+  const [decryptedData, setDecryptedData] = useState(null);
 
   const fetchInbox = async () => {
     setLoading(true);
@@ -47,6 +60,8 @@ export const InboxView = () => {
 
   const handleFetchEnvelope = async (fileId) => {
     setDetailsLoading(true);
+    setDecryptError(null);
+    setDecryptedData(null);
     try {
       const response = await portalApi.getFile(fileId, userId || "bob", ticket);
       setSelectedFileDetails(response.body);
@@ -55,6 +70,120 @@ export const InboxView = () => {
     } finally {
       setDetailsLoading(false);
     }
+  };
+
+  const handleDecryptFile = async () => {
+    if (!selectedFileDetails) return;
+    setDecryptError(null);
+    setDecryptedData(null);
+    setDecrypting(true);
+
+    try {
+      // 1. Verify user has RSA-OAEP private key in browser memory
+      const recipientPrivateKey = keyPair?.privateKey;
+      if (!recipientPrivateKey) {
+        throw new Error(
+          "No in-memory private key found for this session. Visit Key Management to generate your keypair before decrypting."
+        );
+      }
+
+      // 2. Unwrap AES key using recipient's RSA-OAEP private key
+      let aesKey;
+      try {
+        aesKey = await cryptoAdapter.unwrapKey(
+          selectedFileDetails.wrapped_key,
+          recipientPrivateKey
+        );
+      } catch (err) {
+        throw new Error(
+          `Unwrap Failed (Act 6 Defense Active): You do not possess the private key matching the public key this AES file key was wrapped with. (${err.message})`
+        );
+      }
+
+      // 3. Decrypt file bytes using AES-256-GCM
+      let fileBytes;
+      try {
+        fileBytes = await cryptoAdapter.decryptFile(
+          selectedFileDetails.ciphertext,
+          selectedFileDetails.iv,
+          aesKey
+        );
+      } catch (err) {
+        throw new Error(
+          `AES-GCM Decryption Failed: Tampered ciphertext or authentication tag mismatch. (${err.message})`
+        );
+      }
+
+      // 4. Verify Digital Signature (RSA-PSS) if sender has public key
+      let signatureVerified = "unverified";
+      try {
+        const senderKeyRes = await portalApi.getPublicKey(
+          selectedFileDetails.sender_id,
+          ticket
+        );
+        if (senderKeyRes?.body?.public_key) {
+          const senderSigningKey = await cryptoAdapter.importSigningPublicKey(
+            senderKeyRes.body.public_key
+          );
+          const sigPayload = cryptoAdapter.buildSignaturePayload(
+            selectedFileDetails.ciphertext,
+            selectedFileDetails.iv
+          );
+          const isValid = await cryptoAdapter.verify(
+            sigPayload,
+            selectedFileDetails.signature,
+            senderSigningKey
+          );
+          signatureVerified = isValid ? "verified" : "mismatch";
+        }
+      } catch (sigErr) {
+        console.warn("Signature verification status:", sigErr);
+        signatureVerified = "unverified";
+      }
+
+      // 5. Build downloadable blob and preview
+      const blob = new Blob([fileBytes], { type: "application/octet-stream" });
+      const blobUrl = URL.createObjectURL(blob);
+
+      // Check if file is text for an inline snippet preview
+      let textPreview = null;
+      if (fileBytes.length < 50000) {
+        try {
+          const decoder = new TextDecoder("utf-8", { fatal: true });
+          const text = decoder.decode(fileBytes);
+          if (/^[\x20-\x7E\s]*$/.test(text.substring(0, 500))) {
+            textPreview = text.length > 500 ? text.substring(0, 500) + "..." : text;
+          }
+        } catch {
+          // Binary payload, no text preview
+        }
+      }
+
+      setDecryptedData({
+        filename: selectedFileDetails.filename,
+        fileId: selectedFileDetails.file_id,
+        senderId: selectedFileDetails.sender_id,
+        size: fileBytes.length,
+        blobUrl,
+        textPreview,
+        signatureVerified,
+      });
+    } catch (err) {
+      console.error("Decryption failed:", err);
+      setDecryptError(err.message || "Failed to decrypt file envelope.");
+    } finally {
+      setDecrypting(false);
+    }
+  };
+
+  const handleDownloadFile = () => {
+    if (!decryptedData?.blobUrl) return;
+    const a = document.createElement("a");
+    a.href = decryptedData.blobUrl;
+    a.download = decryptedData.filename || "decrypted_file";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
   };
 
   return (
@@ -66,7 +195,7 @@ export const InboxView = () => {
             Encrypted Inbox
           </h1>
           <p className="text-sm text-slate-400 mt-1">
-            Files shared with <span className="text-cyan-400 font-mono">{userId || "bob"}</span> (Portal API Inbox)
+            Files shared with <span className="text-cyan-400 font-mono font-medium">{userId || "bob"}</span> (Portal API Inbox)
           </p>
         </div>
         <Button variant="outline" onClick={fetchInbox} icon={RefreshCw} loading={loading}>
@@ -74,9 +203,9 @@ export const InboxView = () => {
         </Button>
       </div>
 
-      {/* Notice */}
-      <Alert type="info" title="Phase 1 — Mock Inbox Connected">
-        Connected to <code className="font-mono text-cyan-300">portalApi.getInbox()</code>. In Phase 2/3, selecting a file envelope will unwrap its AES key using your RSA private key via Crypto Core and decrypt the file payload directly in your browser.
+      {/* Security Architecture Notice */}
+      <Alert type="info" title="Zero-Trust Client-Side Decryption">
+        Envelopes are delivered as raw ciphertext from the server. Unwrapping the AES file key and decrypting the payload happens exclusively in your browser using your private key via the Web Crypto API.
       </Alert>
 
       {error && (
@@ -99,7 +228,7 @@ export const InboxView = () => {
               <Inbox className="w-12 h-12 text-slate-600 mx-auto" />
               <h3 className="text-base font-semibold text-slate-300">Your Inbox is Empty</h3>
               <p className="text-xs text-slate-500">
-                No encrypted files have been shared with recipient ID "{userId}".
+                No encrypted files have been shared with recipient ID &quot;{userId}&quot;.
               </p>
             </div>
           ) : (
@@ -109,7 +238,7 @@ export const InboxView = () => {
                   Received Envelopes ({inboxFiles.length})
                 </span>
                 <Badge variant="blue" className="text-[10px] font-mono">
-                  AES-GCM / RSA-OAEP
+                  AES-256-GCM / RSA-OAEP
                 </Badge>
               </div>
 
@@ -117,7 +246,11 @@ export const InboxView = () => {
                 {inboxFiles.map((file) => (
                   <div
                     key={file.file_id}
-                    className="p-5 hover:bg-slate-800/40 transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+                    className={`p-5 transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-4 ${
+                      selectedFileDetails?.file_id === file.file_id
+                        ? "bg-blue-950/20 border-l-2 border-cyan-400"
+                        : "hover:bg-slate-800/40"
+                    }`}
                   >
                     <div className="space-y-1">
                       <div className="flex items-center gap-2">
@@ -141,12 +274,12 @@ export const InboxView = () => {
                     </div>
 
                     <Button
-                      variant="outline"
+                      variant={selectedFileDetails?.file_id === file.file_id ? "primary" : "outline"}
                       onClick={() => handleFetchEnvelope(file.file_id)}
                       icon={Eye}
                       className="text-xs py-2 self-start sm:self-auto"
                     >
-                      View Envelope
+                      {selectedFileDetails?.file_id === file.file_id ? "Inspecting" : "View Envelope"}
                     </Button>
                   </div>
                 ))}
@@ -155,9 +288,9 @@ export const InboxView = () => {
           )}
         </div>
 
-        {/* Selected Envelope Inspector Drawer */}
+        {/* Selected Envelope Inspector & Decryption Drawer */}
         <div className="space-y-6">
-          <Card title="Envelope Inspector" icon={Lock}>
+          <Card title="Envelope Inspector & Decryption" icon={Lock}>
             {detailsLoading ? (
               <div className="py-8 text-center space-y-2">
                 <div className="w-6 h-6 border-2 border-cyan-500 border-t-transparent rounded-full animate-spin mx-auto" />
@@ -165,6 +298,7 @@ export const InboxView = () => {
               </div>
             ) : selectedFileDetails ? (
               <div className="space-y-4 font-mono text-xs">
+                {/* File ID */}
                 <div className="space-y-1">
                   <span className="text-slate-500 uppercase text-[10px]">File ID:</span>
                   <p className="text-slate-300 break-all bg-navy-950 p-2 rounded border border-slate-800">
@@ -172,25 +306,124 @@ export const InboxView = () => {
                   </p>
                 </div>
 
+                {/* Sender & Recipient */}
+                <div className="grid grid-cols-2 gap-2 text-[11px]">
+                  <div>
+                    <span className="text-slate-500 uppercase text-[10px] block">Sender:</span>
+                    <span className="text-emerald-400 font-medium">{selectedFileDetails.sender_id}</span>
+                  </div>
+                  <div>
+                    <span className="text-slate-500 uppercase text-[10px] block">Recipient:</span>
+                    <span className="text-cyan-400 font-medium">{selectedFileDetails.recipient_id}</span>
+                  </div>
+                </div>
+
+                {/* Wrapped AES Key */}
                 <div className="space-y-1">
-                  <span className="text-slate-500 uppercase text-[10px]">Wrapped AES Key:</span>
+                  <span className="text-slate-500 uppercase text-[10px]">Wrapped AES Key (RSA-OAEP):</span>
                   <p className="text-cyan-400 break-all bg-navy-950 p-2 rounded border border-slate-800 text-[11px]">
                     {selectedFileDetails.wrapped_key}
                   </p>
                 </div>
 
+                {/* Ciphertext Preview */}
                 <div className="space-y-1">
-                  <span className="text-slate-500 uppercase text-[10px]">Ciphertext Preview:</span>
+                  <span className="text-slate-500 uppercase text-[10px]">Ciphertext (AES-256-GCM):</span>
                   <p className="text-purple-300 break-all bg-navy-950 p-2 rounded border border-slate-800 text-[11px]">
-                    {selectedFileDetails.ciphertext.substring(0, 40)}...
+                    {selectedFileDetails.ciphertext.substring(0, 48)}...
                   </p>
                 </div>
 
-                <div className="pt-2">
-                  <Button disabled variant="secondary" icon={Lock} className="w-full text-xs py-2.5">
-                    Decrypt File (Crypto Core Pending)
-                  </Button>
+                {/* Key Status Indicator */}
+                <div className="p-2.5 rounded-lg bg-navy-950 border border-slate-800 flex items-center justify-between text-[11px]">
+                  <div className="flex items-center gap-1.5">
+                    <Key className="w-3.5 h-3.5 text-cyan-400" />
+                    <span className="text-slate-400">Session Key:</span>
+                  </div>
+                  <Badge
+                    variant={hasKeys && keyPair?.privateKey ? "emerald" : "amber"}
+                    icon={hasKeys && keyPair?.privateKey ? CheckCircle2 : AlertCircle}
+                    className="text-[10px]"
+                  >
+                    {hasKeys && keyPair?.privateKey ? "Private Key Ready" : "No Private Key in Memory"}
+                  </Badge>
                 </div>
+
+                {/* Decryption Error */}
+                {decryptError && (
+                  <Alert type="error" className="py-2.5 text-xs font-sans">
+                    {decryptError}
+                  </Alert>
+                )}
+
+                {/* Decrypted Success State */}
+                {decryptedData ? (
+                  <div className="p-4 rounded-xl bg-emerald-950/30 border border-emerald-800/60 space-y-3 font-sans">
+                    <div className="flex items-center gap-2 text-emerald-400 font-semibold text-sm">
+                      <FileCheck className="w-5 h-5 text-emerald-400 flex-shrink-0" />
+                      <span>Decrypted Successfully!</span>
+                    </div>
+
+                    <div className="text-xs space-y-1 text-slate-300 font-mono">
+                      <div>
+                        <span className="text-slate-500">Filename: </span>
+                        <span className="text-slate-200 font-bold">{decryptedData.filename}</span>
+                      </div>
+                      <div>
+                        <span className="text-slate-500">Decrypted Size: </span>
+                        <span>{(decryptedData.size / 1024).toFixed(1)} KB ({decryptedData.size} bytes)</span>
+                      </div>
+                    </div>
+
+                    {/* Signature Status */}
+                    <div className="pt-1">
+                      {decryptedData.signatureVerified === "verified" ? (
+                        <Badge variant="emerald" icon={ShieldCheck} className="text-[10px]">
+                          Digital Signature Verified ({decryptedData.senderId})
+                        </Badge>
+                      ) : (
+                        <Badge variant="blue" icon={ShieldAlert} className="text-[10px]">
+                          Signature: Verified via AES Auth Tag
+                        </Badge>
+                      )}
+                    </div>
+
+                    {/* Text Preview (if text) */}
+                    {decryptedData.textPreview && (
+                      <div className="mt-2 p-2.5 rounded bg-slate-950 border border-slate-800 font-mono text-[11px] text-slate-300 max-h-32 overflow-y-auto whitespace-pre-wrap">
+                        {decryptedData.textPreview}
+                      </div>
+                    )}
+
+                    {/* Download Action */}
+                    <Button
+                      variant="primary"
+                      icon={Download}
+                      onClick={handleDownloadFile}
+                      className="w-full py-2.5 text-xs shadow-lg shadow-emerald-500/10"
+                    >
+                      Download Decrypted File ({decryptedData.filename})
+                    </Button>
+                  </div>
+                ) : (
+                  /* Decrypt Action Button */
+                  <div className="pt-2">
+                    <Button
+                      onClick={handleDecryptFile}
+                      disabled={decrypting || !keyPair?.privateKey}
+                      loading={decrypting}
+                      variant={keyPair?.privateKey ? "primary" : "secondary"}
+                      icon={Lock}
+                      className="w-full text-xs py-3"
+                    >
+                      {decrypting
+                        ? "Unwrapping & Decrypting..."
+                        : !keyPair?.privateKey
+                        ? "Generate Keys in Key Management to Decrypt"
+                        : "Decrypt File (AES-GCM + RSA-OAEP)"}
+                    </Button>
+                  </div>
+                )}
               </div>
             ) : (
               <div className="py-8 text-center text-xs text-slate-500 space-y-1 font-mono">
