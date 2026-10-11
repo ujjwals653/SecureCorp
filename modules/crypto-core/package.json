@@ -1,0 +1,22 @@
+{
+  "name": "@securecorp/crypto-core",
+  "version": "0.1.0",
+  "private": true,
+  "description": "SecureCorp client-side cryptography (RSA-OAEP key wrapping, AES-GCM, RSA-PSS) built only on the Web Crypto API.",
+  "type": "module",
+  "main": "./src/index.js",
+  "exports": {
+    ".": "./src/index.js"
+  },
+  "files": [
+    "src"
+  ],
+  "scripts": {
+    "test": "node --test test/crypto-core.test.js",
+    "harness": "node scripts/serve.mjs"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "license": "MIT"
+}
