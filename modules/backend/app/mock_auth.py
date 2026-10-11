@@ -1,9 +1,8 @@
 """
-MOCK — replace with real Auth module (modules/auth) at Integration Checkpoint 2.
+Integration Checkpoint 2 — Auth module wired in.
 
-validate_ticket() is the ONLY Auth dependency this module has.
-It returns decoded ticket claims (dict) or None if the ticket is
-invalid / expired / missing.
+validate_ticket() now delegates to the real modules/auth implementation.
+The old hardcoded MOCK_TICKETS table has been retired.
 
 Ticket shape (PROJECT_CONTEXT.md §7.2):
 {
@@ -13,36 +12,19 @@ Ticket shape (PROJECT_CONTEXT.md §7.2):
   "issued_at":  "ISO-8601 string",
   "expires_at": "ISO-8601 string"
 }
+
+Next swap: Integration Checkpoint 1 — replace shared.mocks.mock_validate_cert
+with the real PKI module inside modules/auth/auth.py.
 """
 
+import sys
+import os
 
-# MOCK — replace with real Auth module (modules/auth) at Integration Checkpoint 2
-def validate_ticket(ticket: str) -> dict | None:
-    """
-    Accept a raw Bearer token string and return the decoded claims,
-    or None if the ticket is invalid or unrecognised.
-    """
-    MOCK_TICKETS = {
-        "test-alice-ticket": {
-            "ticket":     "test-alice-ticket",
-            "user_id":    "alice",
-            "role":       "employee",
-            "issued_at":  "2026-10-10T00:00:00Z",
-            "expires_at": "2099-12-31T23:59:59Z",
-        },
-        "test-bob-ticket": {
-            "ticket":     "test-bob-ticket",
-            "user_id":    "bob",
-            "role":       "employee",
-            "issued_at":  "2026-10-10T00:00:00Z",
-            "expires_at": "2099-12-31T23:59:59Z",
-        },
-        "test-admin-ticket": {
-            "ticket":     "test-admin-ticket",
-            "user_id":    "admin",
-            "role":       "admin",
-            "issued_at":  "2026-10-10T00:00:00Z",
-            "expires_at": "2099-12-31T23:59:59Z",
-        },
-    }
-    return MOCK_TICKETS.get(ticket)
+# Ensure repo root is on the path so modules/auth resolves correctly
+_REPO_ROOT = os.path.join(os.path.dirname(__file__), "..", "..", "..", "..")
+if _REPO_ROOT not in sys.path:
+    sys.path.insert(0, _REPO_ROOT)
+
+from modules.auth.auth import validate_ticket  # Real Auth module
+
+__all__ = ["validate_ticket"]

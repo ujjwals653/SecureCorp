@@ -1,26 +1,96 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
+  :root {
+    --purple: #5A1FE0;
+    --purple-dark: #4f19ce;
+    --purple-light: #EDE7FC;
+    --ink: #111113;
+    --body: #6B6B73;
+    --muted: #A0A0A8;
+    --line: #E5E5E8;
+    --panel: #F4F4F5;
+    --surface: #ffffff;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
   body {
-    background-color: #060a12;
-    color: #f1f5f9;
+    background-color: #F4F4F5;
+    color: #111113;
+    font-family: 'Space Grotesk', 'DM Sans', Inter, system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+
+  button {
+    cursor: pointer;
+    font-family: inherit;
+  }
+
+  input, textarea, select {
+    font-family: inherit;
   }
 }
 
-/* Custom scrollbar for dark security dashboard */
+/* Light-themed custom scrollbar */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
 }
 ::-webkit-scrollbar-track {
-  background: #0a0f1d;
+  background: #F4F4F5;
 }
 ::-webkit-scrollbar-thumb {
-  background: #1e293b;
+  background: #D0CDD8;
   border-radius: 3px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #334155;
+  background: #b8b4c2;
+}
+
+/* Focus visible ring — purple accent */
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid #8e6bf0;
+  outline-offset: 2px;
+}
+
+/* Transition helpers */
+.transition-fast {
+  transition: all 0.15s ease;
+}
+
+/* Animated spin */
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+
+/* Fade-in for cards */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-up {
+  animation: fadeUp 0.22s ease forwards;
+}
+
+/* Crystal art polygon clip */
+.crystal-clip {
+  clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%);
 }

@@ -36,7 +36,6 @@ export const InboxView = () => {
   const [selectedFileDetails, setSelectedFileDetails] = useState(null);
   const [detailsLoading, setDetailsLoading] = useState(false);
 
-  // Decryption States
   const [decrypting, setDecrypting] = useState(false);
   const [decryptError, setDecryptError] = useState(null);
   const [decryptedData, setDecryptedData] = useState(null);
@@ -79,7 +78,6 @@ export const InboxView = () => {
     setDecrypting(true);
 
     try {
-      // 1. Verify user has RSA-OAEP private key in browser memory
       const recipientPrivateKey = keyPair?.privateKey;
       if (!recipientPrivateKey) {
         throw new Error(
@@ -87,7 +85,6 @@ export const InboxView = () => {
         );
       }
 
-      // 2. Unwrap AES key using recipient's RSA-OAEP private key
       let aesKey;
       try {
         aesKey = await cryptoAdapter.unwrapKey(
@@ -100,7 +97,6 @@ export const InboxView = () => {
         );
       }
 
-      // 3. Decrypt file bytes using AES-256-GCM
       let fileBytes;
       try {
         fileBytes = await cryptoAdapter.decryptFile(
@@ -114,7 +110,6 @@ export const InboxView = () => {
         );
       }
 
-      // 4. Verify Digital Signature (RSA-PSS) if sender has public key
       let signatureVerified = "unverified";
       try {
         const senderKeyRes = await portalApi.getPublicKey(
@@ -141,11 +136,9 @@ export const InboxView = () => {
         signatureVerified = "unverified";
       }
 
-      // 5. Build downloadable blob and preview
       const blob = new Blob([fileBytes], { type: "application/octet-stream" });
       const blobUrl = URL.createObjectURL(blob);
 
-      // Check if file is text for an inline snippet preview
       let textPreview = null;
       if (fileBytes.length < 50000) {
         try {
@@ -155,7 +148,7 @@ export const InboxView = () => {
             textPreview = text.length > 500 ? text.substring(0, 500) + "..." : text;
           }
         } catch {
-          // Binary payload, no text preview
+          // Binary payload
         }
       }
 
@@ -191,11 +184,9 @@ export const InboxView = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-100 flex items-center gap-2">
-            Encrypted Inbox
-          </h1>
-          <p className="text-sm text-slate-400 mt-1">
-            Files shared with <span className="text-cyan-400 font-mono font-medium">{userId || "bob"}</span> (Portal API Inbox)
+          <h1 className="text-2xl font-bold text-ink">Encrypted Inbox</h1>
+          <p className="text-sm text-body mt-1">
+            Files shared with <span className="text-purple-600 font-semibold">{userId || "bob"}</span> (Portal API Inbox)
           </p>
         </div>
         <Button variant="outline" onClick={fetchInbox} icon={RefreshCw} loading={loading}>
@@ -203,7 +194,7 @@ export const InboxView = () => {
         </Button>
       </div>
 
-      {/* Security Architecture Notice */}
+      {/* Architecture Notice */}
       <Alert type="info" title="Zero-Trust Client-Side Decryption">
         Envelopes are delivered as raw ciphertext from the server. Unwrapping the AES file key and decrypting the payload happens exclusively in your browser using your private key via the Web Crypto API.
       </Alert>
@@ -214,60 +205,56 @@ export const InboxView = () => {
         </Alert>
       )}
 
-      {/* Main Content Area */}
+      {/* Main Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Inbox Table / Card List */}
+        {/* Inbox List */}
         <div className="lg:col-span-2 space-y-4">
           {loading ? (
-            <div className="bg-navy-900 border border-slate-800 rounded-xl p-12 text-center space-y-3">
-              <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto" />
-              <p className="text-sm text-slate-400 font-mono">Fetching inbox envelopes from Portal API...</p>
+            <div className="bg-white border border-line rounded-xl p-12 text-center space-y-3">
+              <div className="w-8 h-8 border-2 border-purple-400 border-t-transparent rounded-full animate-spin mx-auto" />
+              <p className="text-sm text-body">Fetching inbox envelopes from Portal API...</p>
             </div>
           ) : inboxFiles.length === 0 ? (
-            <div className="bg-navy-900 border border-slate-800 rounded-xl p-12 text-center space-y-3">
-              <Inbox className="w-12 h-12 text-slate-600 mx-auto" />
-              <h3 className="text-base font-semibold text-slate-300">Your Inbox is Empty</h3>
-              <p className="text-xs text-slate-500">
+            <div className="bg-white border border-line rounded-xl p-12 text-center space-y-3">
+              <Inbox className="w-12 h-12 text-muted mx-auto" />
+              <h3 className="text-base font-semibold text-ink">Your Inbox is Empty</h3>
+              <p className="text-xs text-body">
                 No encrypted files have been shared with recipient ID &quot;{userId}&quot;.
               </p>
             </div>
           ) : (
-            <div className="bg-navy-900 border border-slate-800 rounded-xl overflow-hidden shadow-xl">
-              <div className="px-6 py-4 border-b border-slate-800 flex items-center justify-between">
-                <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
+            <div className="bg-white border border-line rounded-xl overflow-hidden shadow-sm">
+              <div className="px-6 py-4 border-b border-line flex items-center justify-between">
+                <span className="text-xs font-semibold text-ink uppercase tracking-wider">
                   Received Envelopes ({inboxFiles.length})
                 </span>
-                <Badge variant="blue" className="text-[10px] font-mono">
+                <Badge variant="purple" className="text-[10px]">
                   AES-256-GCM / RSA-OAEP
                 </Badge>
               </div>
 
-              <div className="divide-y divide-slate-800/80">
+              <div className="divide-y divide-line">
                 {inboxFiles.map((file) => (
                   <div
                     key={file.file_id}
                     className={`p-5 transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-4 ${
                       selectedFileDetails?.file_id === file.file_id
-                        ? "bg-blue-950/20 border-l-2 border-cyan-400"
-                        : "hover:bg-slate-800/40"
+                        ? "bg-purple-50 border-l-2 border-purple-400"
+                        : "hover:bg-panel"
                     }`}
                   >
-                    <div className="space-y-1">
+                    <div className="space-y-1.5">
                       <div className="flex items-center gap-2">
-                        <FileText className="w-4 h-4 text-cyan-400 flex-shrink-0" />
-                        <span className="text-sm font-semibold text-slate-100">
-                          {file.filename}
-                        </span>
-                        <Badge variant="emerald" className="text-[10px]">
-                          CIPHERTEXT
-                        </Badge>
+                        <FileText className="w-4 h-4 text-purple-500 flex-shrink-0" />
+                        <span className="text-sm font-semibold text-ink">{file.filename}</span>
+                        <Badge variant="emerald" className="text-[10px]">CIPHERTEXT</Badge>
                       </div>
-                      <div className="flex items-center gap-4 text-xs text-slate-400 font-mono">
+                      <div className="flex items-center gap-4 text-xs text-body">
                         <span className="flex items-center gap-1">
-                          <User className="w-3.5 h-3.5 text-slate-500" /> Sender: {file.sender_id}
+                          <User className="w-3.5 h-3.5 text-muted" /> Sender: {file.sender_id}
                         </span>
                         <span className="flex items-center gap-1">
-                          <Clock className="w-3.5 h-3.5 text-slate-500" />{" "}
+                          <Clock className="w-3.5 h-3.5 text-muted" />{" "}
                           {new Date(file.timestamp).toLocaleDateString()}
                         </span>
                       </div>
@@ -288,20 +275,20 @@ export const InboxView = () => {
           )}
         </div>
 
-        {/* Selected Envelope Inspector & Decryption Drawer */}
+        {/* Envelope Inspector */}
         <div className="space-y-6">
           <Card title="Envelope Inspector & Decryption" icon={Lock}>
             {detailsLoading ? (
               <div className="py-8 text-center space-y-2">
-                <div className="w-6 h-6 border-2 border-cyan-500 border-t-transparent rounded-full animate-spin mx-auto" />
-                <span className="text-xs font-mono text-slate-400">Loading envelope payload...</span>
+                <div className="w-6 h-6 border-2 border-purple-400 border-t-transparent rounded-full animate-spin mx-auto" />
+                <span className="text-xs text-body">Loading envelope payload...</span>
               </div>
             ) : selectedFileDetails ? (
-              <div className="space-y-4 font-mono text-xs">
+              <div className="space-y-4 text-xs">
                 {/* File ID */}
                 <div className="space-y-1">
-                  <span className="text-slate-500 uppercase text-[10px]">File ID:</span>
-                  <p className="text-slate-300 break-all bg-navy-950 p-2 rounded border border-slate-800">
+                  <span className="text-muted uppercase text-[10px] font-medium">File ID:</span>
+                  <p className="text-body break-all bg-panel p-2 rounded-lg border border-line">
                     {selectedFileDetails.file_id}
                   </p>
                 </div>
@@ -309,36 +296,36 @@ export const InboxView = () => {
                 {/* Sender & Recipient */}
                 <div className="grid grid-cols-2 gap-2 text-[11px]">
                   <div>
-                    <span className="text-slate-500 uppercase text-[10px] block">Sender:</span>
-                    <span className="text-emerald-400 font-medium">{selectedFileDetails.sender_id}</span>
+                    <span className="text-muted uppercase text-[10px] font-medium block">Sender:</span>
+                    <span className="text-emerald-600 font-semibold">{selectedFileDetails.sender_id}</span>
                   </div>
                   <div>
-                    <span className="text-slate-500 uppercase text-[10px] block">Recipient:</span>
-                    <span className="text-cyan-400 font-medium">{selectedFileDetails.recipient_id}</span>
+                    <span className="text-muted uppercase text-[10px] font-medium block">Recipient:</span>
+                    <span className="text-purple-600 font-semibold">{selectedFileDetails.recipient_id}</span>
                   </div>
                 </div>
 
                 {/* Wrapped AES Key */}
                 <div className="space-y-1">
-                  <span className="text-slate-500 uppercase text-[10px]">Wrapped AES Key (RSA-OAEP):</span>
-                  <p className="text-cyan-400 break-all bg-navy-950 p-2 rounded border border-slate-800 text-[11px]">
+                  <span className="text-muted uppercase text-[10px] font-medium">Wrapped AES Key (RSA-OAEP):</span>
+                  <p className="text-purple-600 break-all bg-panel p-2 rounded-lg border border-line text-[11px]">
                     {selectedFileDetails.wrapped_key}
                   </p>
                 </div>
 
                 {/* Ciphertext Preview */}
                 <div className="space-y-1">
-                  <span className="text-slate-500 uppercase text-[10px]">Ciphertext (AES-256-GCM):</span>
-                  <p className="text-purple-300 break-all bg-navy-950 p-2 rounded border border-slate-800 text-[11px]">
+                  <span className="text-muted uppercase text-[10px] font-medium">Ciphertext (AES-256-GCM):</span>
+                  <p className="text-body break-all bg-panel p-2 rounded-lg border border-line text-[11px]">
                     {selectedFileDetails.ciphertext.substring(0, 48)}...
                   </p>
                 </div>
 
-                {/* Key Status Indicator */}
-                <div className="p-2.5 rounded-lg bg-navy-950 border border-slate-800 flex items-center justify-between text-[11px]">
+                {/* Key Status */}
+                <div className="p-2.5 rounded-xl bg-panel border border-line flex items-center justify-between text-[11px]">
                   <div className="flex items-center gap-1.5">
-                    <Key className="w-3.5 h-3.5 text-cyan-400" />
-                    <span className="text-slate-400">Session Key:</span>
+                    <Key className="w-3.5 h-3.5 text-purple-500" />
+                    <span className="text-body">Session Key:</span>
                   </div>
                   <Badge
                     variant={hasKeys && keyPair?.privateKey ? "emerald" : "amber"}
@@ -349,33 +336,30 @@ export const InboxView = () => {
                   </Badge>
                 </div>
 
-                {/* Decryption Error */}
                 {decryptError && (
-                  <Alert type="error" className="py-2.5 text-xs font-sans">
+                  <Alert type="error" className="py-2.5 text-xs">
                     {decryptError}
                   </Alert>
                 )}
 
-                {/* Decrypted Success State */}
                 {decryptedData ? (
-                  <div className="p-4 rounded-xl bg-emerald-950/30 border border-emerald-800/60 space-y-3 font-sans">
-                    <div className="flex items-center gap-2 text-emerald-400 font-semibold text-sm">
-                      <FileCheck className="w-5 h-5 text-emerald-400 flex-shrink-0" />
+                  <div className="p-4 rounded-xl bg-emerald-50 border border-emerald-200 space-y-3">
+                    <div className="flex items-center gap-2 text-emerald-700 font-semibold text-sm">
+                      <FileCheck className="w-5 h-5 flex-shrink-0" />
                       <span>Decrypted Successfully!</span>
                     </div>
 
-                    <div className="text-xs space-y-1 text-slate-300 font-mono">
+                    <div className="text-xs space-y-1 text-body">
                       <div>
-                        <span className="text-slate-500">Filename: </span>
-                        <span className="text-slate-200 font-bold">{decryptedData.filename}</span>
+                        <span className="text-muted">Filename: </span>
+                        <span className="text-ink font-bold">{decryptedData.filename}</span>
                       </div>
                       <div>
-                        <span className="text-slate-500">Decrypted Size: </span>
+                        <span className="text-muted">Decrypted Size: </span>
                         <span>{(decryptedData.size / 1024).toFixed(1)} KB ({decryptedData.size} bytes)</span>
                       </div>
                     </div>
 
-                    {/* Signature Status */}
                     <div className="pt-1">
                       {decryptedData.signatureVerified === "verified" ? (
                         <Badge variant="emerald" icon={ShieldCheck} className="text-[10px]">
@@ -388,25 +372,22 @@ export const InboxView = () => {
                       )}
                     </div>
 
-                    {/* Text Preview (if text) */}
                     {decryptedData.textPreview && (
-                      <div className="mt-2 p-2.5 rounded bg-slate-950 border border-slate-800 font-mono text-[11px] text-slate-300 max-h-32 overflow-y-auto whitespace-pre-wrap">
+                      <div className="mt-2 p-2.5 rounded-lg bg-white border border-line text-[11px] text-body max-h-32 overflow-y-auto whitespace-pre-wrap">
                         {decryptedData.textPreview}
                       </div>
                     )}
 
-                    {/* Download Action */}
                     <Button
                       variant="primary"
                       icon={Download}
                       onClick={handleDownloadFile}
-                      className="w-full py-2.5 text-xs shadow-lg shadow-emerald-500/10"
+                      className="w-full py-2.5 text-xs"
                     >
                       Download Decrypted File ({decryptedData.filename})
                     </Button>
                   </div>
                 ) : (
-                  /* Decrypt Action Button */
                   <div className="pt-2">
                     <Button
                       onClick={handleDecryptFile}
@@ -426,7 +407,7 @@ export const InboxView = () => {
                 )}
               </div>
             ) : (
-              <div className="py-8 text-center text-xs text-slate-500 space-y-1 font-mono">
+              <div className="py-8 text-center text-xs text-muted space-y-1">
                 <p>Select an inbox file above to inspect its §7.1 encrypted envelope fields.</p>
               </div>
             )}

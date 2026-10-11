@@ -12,8 +12,19 @@ Run with:
 
 import json
 import pytest
+import sys
+import os
 
 from app import create_app
+
+# ---------------------------------------------------------------------------
+# Make modules/auth importable from the backend tests directory
+# ---------------------------------------------------------------------------
+_REPO_ROOT = os.path.join(os.path.dirname(__file__), "..", "..", "..", "..")
+if _REPO_ROOT not in sys.path:
+    sys.path.insert(0, _REPO_ROOT)
+
+from modules.auth.auth import login as auth_login
 
 
 # ---------------------------------------------------------------------------
@@ -52,15 +63,19 @@ def client(app):
 
 
 # ── helpers ─────────────────────────────────────────────────────────────────
+# Generate real signed tickets (Checkpoint 2: real auth module wired in)
 
 def alice_headers():
-    return {"Authorization": "Bearer test-alice-ticket"}
+    t = auth_login("alice", "password123")
+    return {"Authorization": f"Bearer {t['ticket']}"}
 
 def bob_headers():
-    return {"Authorization": "Bearer test-bob-ticket"}
+    t = auth_login("bob", "password456")
+    return {"Authorization": f"Bearer {t['ticket']}"}
 
 def admin_headers():
-    return {"Authorization": "Bearer test-admin-ticket"}
+    t = auth_login("admin", "adminpass")
+    return {"Authorization": f"Bearer {t['ticket']}"}
 
 def bad_headers():
     return {"Authorization": "Bearer totally-invalid-token"}

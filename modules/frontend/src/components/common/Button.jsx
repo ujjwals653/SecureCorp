@@ -1,14 +1,15 @@
 import React from "react";
+import { Loader2 } from "lucide-react";
 
 const variants = {
   primary:
-    "bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white shadow-lg shadow-blue-500/20 border border-blue-400/30",
+    "bg-purple-600 hover:bg-purple-700 text-white shadow-purple border border-purple-600 hover:border-purple-700",
   secondary:
-    "bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700",
+    "bg-panel hover:bg-line text-ink border border-line",
   outline:
-    "bg-transparent hover:bg-slate-800/60 text-slate-300 border border-slate-700 hover:border-slate-600",
+    "bg-white hover:bg-purple-50 text-purple-600 border border-purple-300 hover:border-purple-400",
   danger:
-    "bg-red-600/20 hover:bg-red-600/30 text-red-300 border border-red-500/40",
+    "bg-white hover:bg-red-50 text-red-600 border border-red-300 hover:border-red-400",
 };
 
 export const Button = ({
@@ -28,10 +29,10 @@ export const Button = ({
       type={type}
       onClick={onClick}
       disabled={disabled || loading}
-      className={`inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500/50 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:from-blue-600 disabled:hover:to-cyan-600 ${base} ${className}`}
+      className={`inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-pill text-sm font-semibold transition-all duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-400 disabled:opacity-50 disabled:cursor-not-allowed active:translate-y-px ${base} ${className}`}
     >
       {loading ? (
-        <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+        <Loader2 className="w-4 h-4 animate-spin" />
       ) : Icon ? (
         <Icon className="w-4 h-4" />
       ) : null}
