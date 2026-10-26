@@ -1,28 +1,65 @@
-version: "3.8"
-
-# Skeleton — each module fills in its own Dockerfile as it becomes ready.
-# Ports match PROJECT_CONTEXT.md §9 dev defaults.
+# SecureCorp Docker Compose Configuration
+# Ports match PROJECT_CONTEXT.md §9 dev defaults:
+#   - Backend (Flask REST API): 5000
+#   - Frontend (React UI): 3000
+#   - IDS Dashboard: 5001 (Integration Checkpoint 4)
 
 services:
   backend:
-    build: ./modules/backend
+    build:
+      context: .
+      dockerfile: modules/backend/Dockerfile
+    container_name: securecorp-backend
     ports:
       - "5000:5000"
+    environment:
+      - FLASK_ENV=development
+      - FLASK_DEBUG=1
+      - DB_PATH=/app/modules/backend/data/securecorp.db
     env_file:
-      - ./modules/backend/.env
-    # depends_on left out intentionally during early dev — add once
-    # real Auth/PKI modules replace mocks, per Integration Checkpoints.
+      - path: ./modules/backend/.env
+        required: false
+    volumes:
+      - backend-data:/app/modules/backend/data
+    networks:
+      - securecorp-net
 
   frontend:
-    build: ./modules/frontend
+    build:
+      context: .
+      dockerfile: modules/frontend/Dockerfile
+    container_name: securecorp-frontend
     ports:
       - "3000:3000"
+    environment:
+      - VITE_API_BASE_URL=http://localhost:5000/api
+      - VITE_USE_MOCK=false
+    env_file:
+      - path: ./modules/frontend/.env
+        required: false
     depends_on:
       - backend
+    networks:
+      - securecorp-net
 
-  ids-dashboard:
-    build: ./modules/ids
-    ports:
-      - "5001:5001"
-    depends_on:
-      - backend
+  # IDS Dashboard — to be enabled at Integration Checkpoint 4 once
+  # modules/ids implementation and Dockerfile are completed.
+  # ids-dashboard:
+  #   build:
+  #     context: .
+  #     dockerfile: modules/ids/Dockerfile
+  #   container_name: securecorp-ids-dashboard
+  #   ports:
+  #     - "5001:5001"
+  #   depends_on:
+  #     - backend
+  #   networks:
+  #     - securecorp-net
+
+volumes:
+  backend-data:
+    name: securecorp-backend-data
+
+networks:
+  securecorp-net:
+    name: securecorp-network
