@@ -2,7 +2,7 @@
 # Ports match PROJECT_CONTEXT.md §9 dev defaults:
 #   - Backend (Flask REST API): 5000
 #   - Frontend (React UI): 3000
-#   - IDS Dashboard: 5001 (Integration Checkpoint 4)
+#   - IDS Dashboard (Intrusion Detection): 5001
 
 services:
   backend:
@@ -16,6 +16,8 @@ services:
       - FLASK_ENV=development
       - FLASK_DEBUG=1
       - DB_PATH=/app/modules/backend/data/securecorp.db
+      - IDS_INGEST_URL=http://ids-dashboard:5001/api/ingest
+      - IDS_ALERTS_URL=http://ids-dashboard:5001/api/alerts
     env_file:
       - path: ./modules/backend/.env
         required: false
@@ -42,19 +44,20 @@ services:
     networks:
       - securecorp-net
 
-  # IDS Dashboard — to be enabled at Integration Checkpoint 4 once
-  # modules/ids implementation and Dockerfile are completed.
-  # ids-dashboard:
-  #   build:
-  #     context: .
-  #     dockerfile: modules/ids/Dockerfile
-  #   container_name: securecorp-ids-dashboard
-  #   ports:
-  #     - "5001:5001"
-  #   depends_on:
-  #     - backend
-  #   networks:
-  #     - securecorp-net
+  ids-dashboard:
+    build:
+      context: .
+      dockerfile: modules/ids/Dockerfile
+    container_name: securecorp-ids-dashboard
+    ports:
+      - "5001:5001"
+    environment:
+      - HOST=0.0.0.0
+      - PORT=5001
+    depends_on:
+      - backend
+    networks:
+      - securecorp-net
 
 volumes:
   backend-data:

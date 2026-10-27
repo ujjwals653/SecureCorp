@@ -75,16 +75,18 @@ class IDSDetector:
         self._failed_logins: dict[str, deque] = defaultdict(deque)
         # Dedup: (ip, alert_type) -> epoch of last alert
         self._last_alert_at: dict[tuple[str, str], float] = {}
+        self._traffic_log: deque[dict] = deque(maxlen=200)
 
     # -- lifecycle ------------------------------------------------------
     def reset(self) -> None:
-        """Clear all state (alerts, blocklist, windows). Useful for tests."""
+        """Clear all state (alerts, blocklist, windows, traffic). Useful for tests."""
         self._alerts.clear()
         self._blocklist.clear()
         self._endpoint_hits.clear()
         self._not_found_hits.clear()
         self._failed_logins.clear()
         self._last_alert_at.clear()
+        self._traffic_log.clear()
 
     # -- public API ------------------------------------------------------
     def ingest_log_entry(self, entry: dict) -> None:
@@ -119,6 +121,17 @@ class IDSDetector:
         self._check_port_scan(ip, now_epoch)
         self._check_brute_force(ip, now_epoch)
 
+        was_blocked = (status == 403) or (self.is_blocked(ip) and status != 200)
+
+        self._traffic_log.append({
+            "timestamp": str(entry.get("timestamp") or datetime.now(timezone.utc).isoformat()),
+            "source_ip": ip,
+            "method": method,
+            "endpoint": endpoint,
+            "status_code": status,
+            "blocked": was_blocked,
+        })
+
     def get_alerts(self) -> list[dict]:
         """Return a copy of all alerts in §7.4 shape."""
         return [dict(a) for a in self._alerts]
@@ -126,6 +139,10 @@ class IDSDetector:
     def is_blocked(self, ip: str) -> bool:
         """Stub Phase-1 logic: membership in the in-memory blocklist."""
         return str(ip) in self._blocklist
+
+    def get_traffic(self) -> list[dict]:
+        """Return rolling list of recent traffic entries."""
+        return [dict(item) for item in self._traffic_log]
 
     # -- internals --------------------------------------------------------
     def _prune(self, ip: str, now: float) -> None:
@@ -195,6 +212,11 @@ def get_alerts() -> list[dict]:
 def is_blocked(ip: str) -> bool:
     """Check the in-memory blocklist (stub until Phase 2 wiring)."""
     return _default_engine.is_blocked(ip)
+
+
+def get_traffic() -> list[dict]:
+    """Return recent traffic log entries."""
+    return _default_engine.get_traffic()
 
 
 def reset() -> None:  # helper for tests / demos; not part of the spec

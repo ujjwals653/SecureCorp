@@ -3,10 +3,13 @@ IDS alerts route.
 
 GET /api/ids/alerts — list IDS alerts; requires ticket + admin role.
 
-The IDS module owns alert generation.  This route simply surfaces
-alerts that were logged to the shared DB (or optionally ingested from
-the IDS module) — it does NOT run the classifier.
+The IDS module owns alert generation. This route surfaces alerts
+logged to the shared DB, or queries the live IDS dashboard service.
 """
+
+import json
+import os
+import urllib.request
 
 from flask import Blueprint, jsonify
 
@@ -40,7 +43,21 @@ def get_alerts():
             ORDER BY detected_at DESC
             """,
         ).fetchall()
+        alerts = [dict(row) for row in rows]
     finally:
         db.close()
 
-    return jsonify([dict(row) for row in rows]), 200
+    # If no DB alerts yet, query the live IDS dashboard service
+    if not alerts:
+        ids_alerts_url = os.environ.get("IDS_ALERTS_URL", "http://ids-dashboard:5001/api/alerts")
+        try:
+            req = urllib.request.Request(ids_alerts_url, headers={"Accept": "application/json"})
+            with urllib.request.urlopen(req, timeout=2) as resp:
+                if resp.status == 200:
+                    data = json.loads(resp.read().decode("utf-8"))
+                    if isinstance(data, list):
+                        alerts = data
+        except Exception:
+            pass
+
+    return jsonify(alerts), 200

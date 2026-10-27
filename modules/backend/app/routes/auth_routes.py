@@ -31,15 +31,17 @@ def login():
     Returns: ticket JSON (§7.2) or 401 / 400 error.
     No auth required on this endpoint.
     """
-    data = request.get_json(silent=True)
-    if not data or "user_id" not in data or "password" not in data:
+    data = request.get_json(silent=True) or {}
+    user_id = data.get("user_id") or data.get("username")
+    password = data.get("password")
+    if not user_id or not password:
         return jsonify({
             "error": "bad_request",
             "message": "user_id and password are required"
         }), 400
 
     try:
-        ticket_response = auth_login(data["user_id"], data["password"])
+        ticket_response = auth_login(user_id, password)
         return jsonify(ticket_response), 200
     except AuthError as e:
         status = 400 if e.code not in ("invalid_credentials", "invalid_cert") else 401
